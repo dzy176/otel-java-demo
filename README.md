@@ -21,7 +21,6 @@ sh build.sh
 graph LR
   subgraph 客户端
     A[http-client]
-    A -.->|cron| A
   end
 
   subgraph 网关层
@@ -35,7 +34,7 @@ graph LR
   subgraph 存储层
     D[MySQL]
   end
-
+  A -.->|cron| A
   A -- "http" --> B
   B -- "grpc" --> C
   C --> D
