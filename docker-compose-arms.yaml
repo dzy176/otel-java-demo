@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+  grpc-server:
+    image: grpc-server:latest
+    container_name: grpc-server
+    restart: on-failure
+    ports:
+      - "8180:8180"
+      - "8181:8181"
+    volumes:
+      - ./aliyun-java-agent.jar:/aliyun-java-agent.jar
+    networks:
+      - app-net
+    entrypoint:
+      - "java"
+      - "-javaagent:/aliyun-java-agent.jar"
+      - "-Darms.licenseKey=bo99******df2"
+      - "-Darms.appName=grpc-server"
+      - "-XX:+UseZGC"
+      - "-jar"
+      - "/app/grpc-server.jar"
+
+
+  http-to-grpc:
+    image: http-to-grpc:latest
+    container_name: http-to-grpc
+    depends_on:
+      - grpc-server
+    restart: on-failure
+    ports:
+      - "8182:8182"
+    environment:
+      - DEMO_GRPC_SERVER=grpc-server:8181
+    volumes:
+      - ./aliyun-java-agent.jar:/aliyun-java-agent.jar
+    networks:
+      - app-net
+    entrypoint:
+      - "java"
+      - "-javaagent:/aliyun-java-agent.jar"
+      - "-Darms.licenseKey=bo99******df2"
+      - "-Darms.appName=http-to-grpc"
+      - "-jar"
+      - "/app/http-to-grpc.jar"
+
+
+  http-client:
+    image: http-client:latest
+    container_name: http-client
+    depends_on:
+      - http-to-grpc
+    restart: on-failure
+    ports:
+      - "8183:8183"
+    environment:
+      - DEMO_HTTP_TO_GRPC=http://http-to-grpc:8182
+      # 填写你的 db 相关信息
+      - SPRING_DATASOURCE_URL=jdbc:mysql://***:3306/powermarket?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=***
+      - SPRING_DATASOURCE_PASSWORD=**
+    volumes:
+      - ./aliyun-java-agent.jar:/aliyun-java-agent.jar
+    networks:
+      - app-net
+    entrypoint:
+      - "java"
+      - "-javaagent:/aliyun-java-agent.jar"
+      - "-Darms.licenseKey=bo99******df2"
+      - "-Darms.appName=http-client"
+      - "-jar"
+      - "/app/http-client.jar"
+
+
+networks:
+  app-net:
+    driver: bridge

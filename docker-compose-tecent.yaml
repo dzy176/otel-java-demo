@@ -1,0 +1,73 @@
+version: "3.9" # 使用 3.9 版本支持资源限制
+
+services:
+  grpc-server:
+    image: grpc-server:latest
+    container_name: grpc-server
+    restart: on-failure
+    ports:
+      - "8180:8180"
+      - "8181:8181"
+    environment:
+      - JAVA_TOOL_OPTIONS="-javaagent:/opentelemetry-javaagent.jar"
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=grpc-server,token=lgC******TQc
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://pl.ap-shanghai.apm.tencentcs.com:4317
+    volumes:
+      - ./opentelemetry-javaagent.jar:/opentelemetry-javaagent.jar
+    networks:
+      - app-net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "800M"
+
+  http-to-grpc:
+    image: http-to-grpc:latest
+    container_name: http-to-grpc
+    depends_on:
+      - grpc-server
+    restart: on-failure
+    ports:
+      - "8182:8182"
+    environment:
+      - DEMO_GRPC_SERVER=grpc-server:8181
+      - JAVA_TOOL_OPTIONS="-javaagent:/opentelemetry-javaagent.jar"
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=http-to-grpc,token=lgC******TQc
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://pl.ap-shanghai.apm.tencentcs.com:4317
+    volumes:
+      - ./opentelemetry-javaagent.jar:/opentelemetry-javaagent.jar
+    networks:
+      - app-net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "512M"
+
+  http-client:
+    image: http-client:latest
+    container_name: http-client
+    depends_on:
+      - http-to-grpc
+    restart: on-failure
+    ports:
+      - "8183:8183"
+    environment:
+      - DEMO_HTTP_TO_GRPC=http://http-to-grpc:8182
+      - JAVA_TOOL_OPTIONS="-javaagent:/opentelemetry-javaagent.jar"
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=http-client,token=lgC******TQc
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://pl.ap-shanghai.apm.tencentcs.com:4317
+    volumes:
+      - ./opentelemetry-javaagent.jar:/opentelemetry-javaagent.jar
+    networks:
+      - app-net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0" # 限制最多使用 50% 的 CPU
+          memory: "512M" # 限制最多使用 256MB 内存
+
+networks:
+  app-net:
+    driver: bridge
