@@ -20,7 +20,8 @@ sh build.sh
 ```mermaid
 graph LR
   subgraph 客户端
-    A[http-client]
+    A[http-client
+    'cron']
   end
 
   subgraph 网关层
@@ -34,7 +35,7 @@ graph LR
   subgraph 存储层
     D[MySQL]
   end
-  A -.->|cron| A
+
   A -- "http" --> B
   B -- "grpc" --> C
   C --> D
