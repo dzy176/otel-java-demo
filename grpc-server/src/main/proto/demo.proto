@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+package demoGrpc;
+
+message DemoRequest {
+  string in = 1;
+}
+
+message DemoResponse {
+  string out = 1;
+}
+
+service DemoService {
+  rpc DemoMethod(DemoRequest) returns (DemoResponse);
+}
